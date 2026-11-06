@@ -1,0 +1,15 @@
+{
+  "Listen": "127.0.0.1:10809",
+  "Endpoint": "https://s3.example.org",
+  "Region": "us-east-1",
+  "InsecureTLS": false,
+  "YandexPatch": false,
+  "Workers": 16,
+  "BlockSize": 1048576,
+  "CacheBlocks": 256,
+  "FlushSeconds": 5,
+  "Devices": [
+    {"Name": "disk1", "Bucket": "nbd", "Prefix": "disk1", "Size": 10737418240},
+    {"Name": "disk2", "Bucket": "nbd", "Prefix": "disk2", "Size": 21474836480}
+  ]
+}
