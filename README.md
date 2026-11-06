@@ -63,7 +63,7 @@ Set `S3_SESSION_TOKEN` for temporary credentials. For a custom CA, use the syste
 
 **Writes are acknowledged in RAM. A crash loses any data that has not been flushed.** FLUSH and writes with FUA wait for pending changes to reach S3. Failed uploads stay dirty for retry, and the client receives `EIO`.
 
-Background flushes run every `FlushSeconds`; disconnect and SIGINT/SIGTERM also trigger a flush. If the final flush fails, the server exits with an error and cannot preserve the remaining RAM contents.
+Background flushes run every `FlushSeconds`; disconnect and SIGINT/SIGTERM also trigger a flush. If the final flush fails, the server exits with an error and cannot preserve the remaining RAM contents. Shutdown attempts to flush every device even if some fail, and reports all final flush errors.
 
 Each object at `Prefix/blocks/<16 hex digits>` holds one block. Missing objects read as zeros. Writes accumulate in the cache without GET requests. A partial-block flush loads existing data before uploading the full block; a full overwrite skips that read. All-zero blocks are deleted instead of uploaded.
 

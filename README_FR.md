@@ -63,7 +63,7 @@ Définissez `S3_SESSION_TOKEN` pour utiliser des identifiants temporaires. Pour 
 
 **Les écritures sont acquittées en RAM. Un plantage entraîne la perte des données qui n’ont pas encore été transférées vers S3.** FLUSH et les écritures avec FUA attendent que les modifications en attente parviennent à S3. Les envois échoués restent en attente d’une nouvelle tentative et le client reçoit `EIO`.
 
-Les vidages en arrière-plan s’exécutent toutes les `FlushSeconds` ; une déconnexion et SIGINT/SIGTERM déclenchent également un vidage. Si le vidage final échoue, le serveur se termine avec une erreur et ne peut pas conserver le contenu restant en RAM.
+Les vidages en arrière-plan s’exécutent toutes les `FlushSeconds` ; une déconnexion et SIGINT/SIGTERM déclenchent également un vidage. Si le vidage final échoue, le serveur se termine avec une erreur et ne peut pas conserver le contenu restant en RAM. À l’arrêt, le serveur tente de vider tous les périphériques même si certains échouent et signale toutes les erreurs du vidage final.
 
 Chaque objet à l’emplacement `Prefix/blocks/<16 hex digits>` contient un bloc. La lecture d’un objet absent renvoie des zéros. Les écritures s’accumulent dans le cache sans requêtes GET. Le vidage d’un bloc partiellement modifié charge les données existantes avant d’envoyer le bloc complet ; une réécriture complète évite cette lecture. Les blocs ne contenant que des zéros sont supprimés au lieu d’être envoyés.
 

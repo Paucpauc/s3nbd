@@ -63,7 +63,7 @@ Define `S3_SESSION_TOKEN` para usar credenciales temporales. Para una CA persona
 
 **Las escrituras se confirman en RAM. Una caída provoca la pérdida de los datos que aún no se hayan volcado.** FLUSH y las escrituras con FUA esperan hasta que los cambios pendientes lleguen a S3. Las cargas fallidas permanecen pendientes para reintentarlas y el cliente recibe `EIO`.
 
-Los volcados en segundo plano se ejecutan cada `FlushSeconds`; la desconexión y SIGINT/SIGTERM también provocan un volcado. Si el volcado final falla, el servidor termina con un error y no puede conservar el contenido restante de la RAM.
+Los volcados en segundo plano se ejecutan cada `FlushSeconds`; la desconexión y SIGINT/SIGTERM también provocan un volcado. Si el volcado final falla, el servidor termina con un error y no puede conservar el contenido restante de la RAM. Al cerrar, el servidor intenta volcar todos los dispositivos aunque algunos fallen e informa de todos los errores del volcado final.
 
 Cada objeto en `Prefix/blocks/<16 hex digits>` contiene un bloque. Los objetos ausentes se leen como ceros. Las escrituras se acumulan en la caché sin solicitudes GET. El volcado de un bloque parcialmente modificado carga los datos existentes antes de subir el bloque completo; una sobrescritura completa omite esa lectura. Los bloques que solo contienen ceros se eliminan en lugar de subirse.
 

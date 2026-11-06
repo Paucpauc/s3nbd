@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"github.com/minio/minio-go/v7"
@@ -157,12 +158,18 @@ func run() error {
 	slog.Info("NBD shutting down")
 	wg.Wait()
 	bg.Wait()
+	return flushDevices(context.Background(), devices)
+}
+
+// A failed export must not prevent the remaining devices from being saved.
+func flushDevices(ctx context.Context, devices map[string]*Device) error {
+	var errs []error
 	for name, d := range devices {
-		if err := d.Flush(context.Background()); err != nil {
-			return fmt.Errorf("final flush %s: %w", name, err)
+		if err := d.Flush(ctx); err != nil {
+			errs = append(errs, fmt.Errorf("final flush %s: %w", name, err))
 		}
 	}
-	return nil
+	return errors.Join(errs...)
 }
 func main() {
 	if err := run(); err != nil {
