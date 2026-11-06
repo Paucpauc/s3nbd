@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
-	"log"
+	"log/slog"
 	"net"
 	"net/http"
 	"net/url"
@@ -22,6 +22,7 @@ import (
 
 type Config struct {
 	Listen, Endpoint, Region                      string
+	LogLevel                                      string
 	InsecureTLS                                   bool
 	YandexPatch                                   bool
 	Workers, BlockSize, CacheBlocks, FlushSeconds int
@@ -43,6 +44,11 @@ func run() error {
 	if err = json.Unmarshal(raw, &cfg); err != nil {
 		return err
 	}
+	logger, err := newLogger(os.Stderr, cfg.LogLevel)
+	if err != nil {
+		return err
+	}
+	slog.SetDefault(logger)
 	host, _, err := net.SplitHostPort(cfg.Listen)
 	if err != nil {
 		return err
@@ -60,6 +66,9 @@ func run() error {
 	}
 	if (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" || u.Path != "" && u.Path != "/" {
 		return fmt.Errorf("endpoint must be http(s)://host[:port]")
+	}
+	if cfg.InsecureTLS {
+		slog.Warn("S3 TLS certificate verification disabled")
 	}
 	transport := http.DefaultTransport.(*http.Transport).Clone()
 	transport.TLSClientConfig = &tls.Config{MinVersion: tls.VersionTLS12, InsecureSkipVerify: cfg.InsecureTLS}
@@ -123,13 +132,13 @@ func run() error {
 			case <-t.C:
 				for name, d := range devices {
 					if err := d.Flush(context.Background()); err != nil {
-						log.Printf("flush %s: %v", name, err)
+						slog.Error("background flush failed", "device", name, "error", err)
 					}
 				}
 			}
 		}
 	}()
-	log.Printf("NBD listening on %s", cfg.Listen)
+	slog.Info("NBD listening", "address", cfg.Listen)
 	for {
 		c, err := listener.Accept()
 		if err != nil {
@@ -153,6 +162,7 @@ func run() error {
 			serve(c, devices)
 		}()
 	}
+	slog.Info("NBD shutting down")
 	wg.Wait()
 	bg.Wait()
 	for name, d := range devices {
@@ -164,6 +174,7 @@ func run() error {
 }
 func main() {
 	if err := run(); err != nil {
-		log.Fatal(err)
+		slog.Error("server failed", "error", err)
+		os.Exit(1)
 	}
 }

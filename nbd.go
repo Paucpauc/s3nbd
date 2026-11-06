@@ -3,9 +3,8 @@ package main
 import (
 	"context"
 	"encoding/binary"
-	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"net"
 	"sync"
 	"time"
@@ -30,6 +29,8 @@ func reply(c net.Conn, opt, kind uint32, p []byte) error {
 	return send(c, uint64(0x3e889045565a9), opt, kind, uint32(len(p)), p)
 }
 func serve(c net.Conn, devices map[string]*Device) {
+	slog.Debug("NBD connected", "remote", c.RemoteAddr().String())
+	defer slog.Debug("NBD disconnected", "remote", c.RemoteAddr().String())
 	defer c.Close()
 	c.SetDeadline(time.Now().Add(30 * time.Second))
 	if send(c, uint64(0x4e42444d41474943), optMagic, uint16(3)) != nil {
@@ -105,7 +106,7 @@ func serve(c net.Conn, devices map[string]*Device) {
 				d = target
 				defer func() {
 					if err := d.Flush(context.Background()); err != nil {
-						log.Printf("disconnect flush: %v", err)
+						slog.Error("disconnect flush failed", "device", name, "error", err)
 					}
 					d.mu.Lock()
 					d.busy = false
@@ -155,6 +156,7 @@ func serve(c net.Conn, devices map[string]*Device) {
 		if binary.Read(c, be, &h) != nil || h.Magic != 0x25609513 {
 			return
 		}
+		slog.Debug("NBD command", "command", h.Type, "offset", h.Offset, "length", h.Length)
 		// TRIM has no payload: its range can exceed the READ/WRITE buffer limit.
 		if (h.Type == 0 || h.Type == 1) && h.Length > 32<<20 {
 			return
@@ -176,7 +178,7 @@ func serve(c net.Conn, devices map[string]*Device) {
 				} else {
 					p = make([]byte, h.Length)
 					if err := d.IO(ctx, h.Offset, p, false, false); err != nil {
-						log.Printf("NBD READ: %v", err)
+						slog.Error("NBD READ failed", "offset", h.Offset, "length", h.Length, "error", err)
 						errno = 5
 					}
 				}
@@ -233,7 +235,7 @@ func serve(c net.Conn, devices map[string]*Device) {
 			}
 		}
 		if err != nil {
-			log.Print(fmt.Errorf("NBD command %d: %w", h.Type, err))
+			slog.Error("NBD command failed", "command", h.Type, "offset", h.Offset, "length", h.Length, "error", err)
 			errno = 5
 		}
 		if send(c, uint32(0x67446698), errno, h.Handle) != nil {

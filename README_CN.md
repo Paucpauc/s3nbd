@@ -37,6 +37,7 @@ sudo nbd-client 127.0.0.1 10809 /dev/nbd1 -N disk2
 
 | 配置项 | 说明 |
 | --- | --- |
+| `LogLevel` | 最低日志级别：`debug`、`info`（默认）、`warn` 或 `error`，不区分大小写。启动时生效；无效值会阻止启动。日志输出到 stderr，包含时间和级别。统计及启动/停止事件为 info，NBD 连接和命令为 debug，警告为 warn，操作失败为 error。 |
 | `Listen` | NBD 监听地址，必须为回环 IP 地址。 |
 | `Endpoint`, `Region` | S3 服务端点和请求签名区域。 |
 | `Devices` | 各设备的 `Name`、`Bucket`、`Prefix` 和以字节为单位的 `Size`。 |

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"net/http"
 	"sort"
 	"strings"
@@ -79,6 +79,9 @@ func (s *statsTransport) logLoop(ctx context.Context, devices map[string]*Device
 			return
 		case <-ticker.C:
 			counts := s.snapshot()
+			if !slog.Default().Enabled(ctx, slog.LevelInfo) {
+				continue
+			}
 			methods := make([]string, 0, len(counts))
 			for method := range counts {
 				methods = append(methods, method)
@@ -92,11 +95,11 @@ func (s *statsTransport) logLoop(ctx context.Context, devices map[string]*Device
 			if len(parts) == 0 {
 				parts = append(parts, "requests=0 tx_bytes=0 rx_bytes=0")
 			}
-			log.Printf("S3 stats interval=5s: %s", strings.Join(parts, "; "))
+			slog.Info("S3 stats", "interval", "5s", "methods", strings.Join(parts, "; "))
 			for _, name := range names {
 				d := devices[name]
 				dirty := d.dirtyBlocks.Load()
-				log.Printf("cache stats device=%q dirty_objects=%d dirty_bytes=%d", name, dirty, dirty*int64(d.blockSize))
+				slog.Info("cache stats", "device", name, "dirty_objects", dirty, "dirty_bytes", dirty*int64(d.blockSize))
 			}
 		}
 	}

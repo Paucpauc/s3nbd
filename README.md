@@ -37,6 +37,7 @@ See [config.example.json](config.example.json) for a complete example.
 
 | Setting | What it controls |
 | --- | --- |
+| `LogLevel` | Minimum log level: `debug`, `info` (default), `warn`, or `error`; case-insensitive. Applied at startup; invalid values prevent startup. Logs go to stderr with timestamps and levels. Statistics and lifecycle events use info, NBD connections/commands debug, warnings warn, and operation failures error. |
 | `Listen` | NBD address; must be a loopback IP. |
 | `Endpoint`, `Region` | S3 endpoint and signing region. |
 | `Devices` | Each device's `Name`, `Bucket`, `Prefix`, and `Size` in bytes. |
