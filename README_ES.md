@@ -2,7 +2,7 @@
 
 [English](README.md) | [Русский](README_RU.md) | [简体中文](README_CN.md) | Español | [Français](README_FR.md)
 
-Servidor NBD escrito en Go que almacena dispositivos de bloques en un almacenamiento compatible con S3. Admite varios dispositivos con nombre, con un cliente activo por dispositivo. NBD utiliza TCP sin TLS; S3 utiliza HTTP o HTTPS, direccionamiento path-style y Signature V4.
+Servidor NBD escrito en Go que almacena dispositivos de bloques en un almacenamiento compatible con S3. Admite varios dispositivos con nombre, con un cliente activo por dispositivo. NBD utiliza TCP o un socket Unix sin TLS; S3 utiliza HTTP o HTTPS, direccionamiento path-style y Signature V4.
 
 ## Inicio rápido
 
@@ -31,6 +31,15 @@ sudo nbd-client 127.0.0.1 10809 /dev/nbd1 -N disk2
 
 Ahora puedes formatearlos y montarlos con las herramientas habituales de Linux. Antes de detener el servidor, desmonta los sistemas de archivos y desconecta NBD.
 
+## Socket Unix
+
+Para acceso local, configura `"Listen": "unix:/run/s3nbd/nbd.sock"`. Crea el directorio padre con permisos `0700`, como el usuario que ejecuta s3nbd. El socket tiene permisos `0600`; el cliente debe ejecutarse como ese usuario o root. No se sobrescriben rutas existentes. El socket se elimina al cerrar normalmente; después de un fallo, elimina el socket residual manualmente solo tras comprobar que ningún servidor lo utiliza.
+
+```sh
+sudo install -d -m 0700 /run/s3nbd  # server running as root
+sudo nbd-client -unix /run/s3nbd/nbd.sock /dev/nbd0 -N disk1
+```
+
 ## Configuración
 
 Consulta [config.example.json](config.example.json) para ver un ejemplo completo.
@@ -38,7 +47,7 @@ Consulta [config.example.json](config.example.json) para ver un ejemplo completo
 | Parámetro | Función |
 | --- | --- |
 | `LogLevel` | Nivel mínimo de registro: `debug`, `info` (predeterminado), `warn` o `error`; no distingue mayúsculas de minúsculas. Se aplica al iniciar; los valores no válidos impiden el arranque. Los registros se envían a stderr con marcas de tiempo y niveles. Las estadísticas y los eventos del ciclo de vida usan info; las conexiones y los comandos NBD, debug; las advertencias, warn; y los fallos de las operaciones, error. |
-| `Listen` | Dirección de escucha NBD (`host:port`); utiliza `0.0.0.0:10809` para escuchar en todas las interfaces IPv4. Valor predeterminado: `127.0.0.1:10809`. |
+| `Listen` | Dirección de escucha NBD (`host:port` / `unix:/absolute/path`); utiliza `0.0.0.0:10809` para escuchar en todas las interfaces IPv4. Valor predeterminado: `127.0.0.1:10809`. |
 | `Endpoint`, `Region` | Endpoint S3 y región utilizada para la firma. |
 | `Devices` | `Name`, `Bucket`, `Prefix` y `Size` (en bytes) de cada dispositivo. |
 | `BlockSize` | Bytes por objeto S3. Los tamaños de los dispositivos deben ser múltiplos de este valor. |

@@ -49,10 +49,6 @@ func run() error {
 		return err
 	}
 	slog.SetDefault(logger)
-	_, _, err = net.SplitHostPort(cfg.Listen)
-	if err != nil {
-		return err
-	}
 	if cfg.Workers < 1 || cfg.BlockSize < 512 || cfg.BlockSize > 32<<20 || cfg.BlockSize%512 != 0 || cfg.CacheBlocks < 1 || cfg.FlushSeconds < 1 {
 		return fmt.Errorf("invalid cache/worker settings")
 	}
@@ -94,7 +90,7 @@ func run() error {
 	if len(devices) == 0 {
 		return fmt.Errorf("no devices")
 	}
-	listener, err := net.Listen("tcp", cfg.Listen)
+	listener, err := listenNBD(cfg.Listen)
 	if err != nil {
 		return err
 	}

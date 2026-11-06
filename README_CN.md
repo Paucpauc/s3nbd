@@ -2,7 +2,7 @@
 
 [English](README.md) | [Русский](README_RU.md) | 简体中文 | [Español](README_ES.md) | [Français](README_FR.md)
 
-用 Go 编写的 NBD 服务器，将块设备数据存储在兼容 S3 的存储中。支持多个命名设备，每个设备允许一个活跃客户端。NBD 通过 TCP 连接提供服务，不使用 TLS；S3 使用 HTTP 或 HTTPS、path-style 寻址和 Signature V4 签名。
+用 Go 编写的 NBD 服务器，将块设备数据存储在兼容 S3 的存储中。支持多个命名设备，每个设备允许一个活跃客户端。NBD 通过 TCP 或 Unix 套接字提供服务，不使用 TLS；S3 使用 HTTP 或 HTTPS、path-style 寻址和 Signature V4 签名。
 
 ## 快速开始
 
@@ -31,6 +31,15 @@ sudo nbd-client 127.0.0.1 10809 /dev/nbd1 -N disk2
 
 现在可以使用标准 Linux 工具格式化和挂载设备。停止服务器前，请先卸载文件系统并断开 NBD 连接。
 
+## Unix 套接字
+
+本地访问可设置 `"Listen": "unix:/run/s3nbd/nbd.sock"`。父目录必须由运行 s3nbd 的用户创建，权限为 `0700`。套接字权限为 `0600`，客户端必须以同一用户或 root 运行。不会覆盖现有路径。正常关闭时会删除套接字；崩溃后，只有确认没有服务器使用该套接字时，才可手动删除残留文件。
+
+```sh
+sudo install -d -m 0700 /run/s3nbd  # server running as root
+sudo nbd-client -unix /run/s3nbd/nbd.sock /dev/nbd0 -N disk1
+```
+
 ## 配置
 
 完整示例见 [config.example.json](config.example.json)。
@@ -38,7 +47,7 @@ sudo nbd-client 127.0.0.1 10809 /dev/nbd1 -N disk2
 | 配置项 | 说明 |
 | --- | --- |
 | `LogLevel` | 最低日志级别：`debug`、`info`（默认）、`warn` 或 `error`，不区分大小写。启动时生效；无效值会阻止启动。日志输出到 stderr，包含时间和级别。统计及启动/停止事件为 info，NBD 连接和命令为 debug，警告为 warn，操作失败为 error。 |
-| `Listen` | NBD 监听地址（`host:port`）；使用 `0.0.0.0:10809` 监听所有 IPv4 接口。默认为 `127.0.0.1:10809`。 |
+| `Listen` | NBD 监听地址（`host:port` / `unix:/absolute/path`）；使用 `0.0.0.0:10809` 监听所有 IPv4 接口。默认为 `127.0.0.1:10809`。 |
 | `Endpoint`, `Region` | S3 服务端点和请求签名区域。 |
 | `Devices` | 各设备的 `Name`、`Bucket`、`Prefix` 和以字节为单位的 `Size`。 |
 | `BlockSize` | 每个 S3 对象的字节数。设备大小必须是该值的整数倍。 |

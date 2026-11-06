@@ -2,7 +2,7 @@
 
 English | [Русский](README_RU.md) | [简体中文](README_CN.md) | [Español](README_ES.md) | [Français](README_FR.md)
 
-A Go NBD server that stores block devices in S3-compatible storage. Supports multiple named devices, with one active client per device. NBD runs over TCP without TLS; S3 uses HTTP or HTTPS, path-style addressing, and Signature V4.
+A Go NBD server that stores block devices in S3-compatible storage. Supports multiple named devices, with one active client per device. NBD runs over TCP or a Unix socket without TLS; S3 uses HTTP or HTTPS, path-style addressing, and Signature V4.
 
 ## Quick start
 
@@ -31,6 +31,15 @@ sudo nbd-client 127.0.0.1 10809 /dev/nbd1 -N disk2
 
 You can now format and mount them using standard Linux tools. Before stopping the server, unmount the filesystems and disconnect NBD.
 
+## Unix socket
+
+For local access, set `"Listen": "unix:/run/s3nbd/nbd.sock"`. Create the parent directory with mode `0700`, owned by the user running s3nbd. The socket has mode `0600`; the client must run as that user or root. Existing paths are never overwritten. The socket is removed on normal shutdown; after a crash, remove a stale socket manually only after verifying that no server is using it.
+
+```sh
+sudo install -d -m 0700 /run/s3nbd  # server running as root
+sudo nbd-client -unix /run/s3nbd/nbd.sock /dev/nbd0 -N disk1
+```
+
 ## Configuration
 
 See [config.example.json](config.example.json) for a complete example.
@@ -38,7 +47,7 @@ See [config.example.json](config.example.json) for a complete example.
 | Setting | What it controls |
 | --- | --- |
 | `LogLevel` | Minimum log level: `debug`, `info` (default), `warn`, or `error`; case-insensitive. Applied at startup; invalid values prevent startup. Logs go to stderr with timestamps and levels. Statistics and lifecycle events use info, NBD connections/commands debug, warnings warn, and operation failures error. |
-| `Listen` | NBD listen address (`host:port`); use `0.0.0.0:10809` to listen on all IPv4 interfaces. Defaults to `127.0.0.1:10809`. |
+| `Listen` | NBD listen address (`host:port` / `unix:/absolute/path`); use `0.0.0.0:10809` to listen on all IPv4 interfaces. Defaults to `127.0.0.1:10809`. |
 | `Endpoint`, `Region` | S3 endpoint and signing region. |
 | `Devices` | Each device's `Name`, `Bucket`, `Prefix`, and `Size` in bytes. |
 | `BlockSize` | Bytes per S3 object. Device sizes must be a multiple of this. |
