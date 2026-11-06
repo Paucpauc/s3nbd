@@ -2,7 +2,7 @@
 
 [English](README.md) | [Русский](README_RU.md) | [简体中文](README_CN.md) | Español | [Français](README_FR.md)
 
-Servidor NBD escrito en Go que almacena dispositivos de bloques en un almacenamiento compatible con S3. Admite varios dispositivos con nombre, con un cliente activo por dispositivo. NBD utiliza TCP en la interfaz de loopback, sin TLS; S3 utiliza HTTP o HTTPS, direccionamiento path-style y Signature V4.
+Servidor NBD escrito en Go que almacena dispositivos de bloques en un almacenamiento compatible con S3. Admite varios dispositivos con nombre, con un cliente activo por dispositivo. NBD utiliza TCP sin TLS; S3 utiliza HTTP o HTTPS, direccionamiento path-style y Signature V4.
 
 ## Inicio rápido
 
@@ -38,7 +38,7 @@ Consulta [config.example.json](config.example.json) para ver un ejemplo completo
 | Parámetro | Función |
 | --- | --- |
 | `LogLevel` | Nivel mínimo de registro: `debug`, `info` (predeterminado), `warn` o `error`; no distingue mayúsculas de minúsculas. Se aplica al iniciar; los valores no válidos impiden el arranque. Los registros se envían a stderr con marcas de tiempo y niveles. Las estadísticas y los eventos del ciclo de vida usan info; las conexiones y los comandos NBD, debug; las advertencias, warn; y los fallos de las operaciones, error. |
-| `Listen` | Dirección NBD; debe ser una IP de loopback. |
+| `Listen` | Dirección de escucha NBD (`host:port`); utiliza `0.0.0.0:10809` para escuchar en todas las interfaces IPv4. Valor predeterminado: `127.0.0.1:10809`. |
 | `Endpoint`, `Region` | Endpoint S3 y región utilizada para la firma. |
 | `Devices` | `Name`, `Bucket`, `Prefix` y `Size` (en bytes) de cada dispositivo. |
 | `BlockSize` | Bytes por objeto S3. Los tamaños de los dispositivos deben ser múltiplos de este valor. |

@@ -2,7 +2,7 @@
 
 English | [Русский](README_RU.md) | [简体中文](README_CN.md) | [Español](README_ES.md) | [Français](README_FR.md)
 
-A Go NBD server that stores block devices in S3-compatible storage. Supports multiple named devices, with one active client per device. NBD runs on loopback TCP without TLS; S3 uses HTTP or HTTPS, path-style addressing, and Signature V4.
+A Go NBD server that stores block devices in S3-compatible storage. Supports multiple named devices, with one active client per device. NBD runs over TCP without TLS; S3 uses HTTP or HTTPS, path-style addressing, and Signature V4.
 
 ## Quick start
 
@@ -38,7 +38,7 @@ See [config.example.json](config.example.json) for a complete example.
 | Setting | What it controls |
 | --- | --- |
 | `LogLevel` | Minimum log level: `debug`, `info` (default), `warn`, or `error`; case-insensitive. Applied at startup; invalid values prevent startup. Logs go to stderr with timestamps and levels. Statistics and lifecycle events use info, NBD connections/commands debug, warnings warn, and operation failures error. |
-| `Listen` | NBD address; must be a loopback IP. |
+| `Listen` | NBD listen address (`host:port`); use `0.0.0.0:10809` to listen on all IPv4 interfaces. Defaults to `127.0.0.1:10809`. |
 | `Endpoint`, `Region` | S3 endpoint and signing region. |
 | `Devices` | Each device's `Name`, `Bucket`, `Prefix`, and `Size` in bytes. |
 | `BlockSize` | Bytes per S3 object. Device sizes must be a multiple of this. |

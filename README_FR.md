@@ -2,7 +2,7 @@
 
 [English](README.md) | [Русский](README_RU.md) | [简体中文](README_CN.md) | [Español](README_ES.md) | Français
 
-Serveur NBD écrit en Go qui stocke des périphériques blocs dans un stockage compatible S3. Il prend en charge plusieurs périphériques nommés, avec un seul client actif par périphérique. NBD utilise TCP sur l’interface de bouclage, sans TLS ; S3 utilise HTTP ou HTTPS, l’adressage path-style et Signature V4.
+Serveur NBD écrit en Go qui stocke des périphériques blocs dans un stockage compatible S3. Il prend en charge plusieurs périphériques nommés, avec un seul client actif par périphérique. NBD utilise TCP sans TLS ; S3 utilise HTTP ou HTTPS, l’adressage path-style et Signature V4.
 
 ## Démarrage rapide
 
@@ -38,7 +38,7 @@ Consultez [config.example.json](config.example.json) pour un exemple complet.
 | Paramètre | Fonction |
 | --- | --- |
 | `LogLevel` | Niveau minimal de journalisation : `debug`, `info` (par défaut), `warn` ou `error` ; insensible à la casse. Appliqué au démarrage ; une valeur invalide empêche le démarrage. Les journaux sont envoyés vers stderr avec horodatage et niveau. Les statistiques et les événements du cycle de vie utilisent info ; les connexions et commandes NBD, debug ; les avertissements, warn ; et les échecs d’opérations, error. |
-| `Listen` | Adresse NBD ; doit être une IP de bouclage. |
+| `Listen` | Adresse d’écoute NBD (`host:port`) ; utilisez `0.0.0.0:10809` pour écouter sur toutes les interfaces IPv4. Valeur par défaut : `127.0.0.1:10809`. |
 | `Endpoint`, `Region` | Point de terminaison S3 et région utilisée pour la signature. |
 | `Devices` | `Name`, `Bucket`, `Prefix` et `Size` (en octets) de chaque périphérique. |
 | `BlockSize` | Octets par objet S3. Les tailles des périphériques doivent être des multiples de cette valeur. |

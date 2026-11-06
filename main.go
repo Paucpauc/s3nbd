@@ -49,13 +49,9 @@ func run() error {
 		return err
 	}
 	slog.SetDefault(logger)
-	host, _, err := net.SplitHostPort(cfg.Listen)
+	_, _, err = net.SplitHostPort(cfg.Listen)
 	if err != nil {
 		return err
-	}
-	ip := net.ParseIP(host)
-	if ip == nil || !ip.IsLoopback() {
-		return fmt.Errorf("listen must use a loopback IP")
 	}
 	if cfg.Workers < 1 || cfg.BlockSize < 512 || cfg.BlockSize > 32<<20 || cfg.BlockSize%512 != 0 || cfg.CacheBlocks < 1 || cfg.FlushSeconds < 1 {
 		return fmt.Errorf("invalid cache/worker settings")
