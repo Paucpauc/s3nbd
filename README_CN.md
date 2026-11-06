@@ -1,6 +1,6 @@
 # s3nbd
 
-[English](README.md) | [Русский](README_RU.md) | 简体中文
+[English](README.md) | [Русский](README_RU.md) | 简体中文 | [Español](README_ES.md) | [Français](README_FR.md)
 
 用 Go 编写的 NBD 服务器，将块设备数据存储在兼容 S3 的存储中。支持多个命名设备，每个设备允许一个活跃客户端。NBD 仅通过本机回环 TCP 连接提供服务，不使用 TLS；S3 使用 HTTP 或 HTTPS、path-style 寻址和 Signature V4 签名。
 

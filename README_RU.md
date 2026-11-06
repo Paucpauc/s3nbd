@@ -1,6 +1,6 @@
 # s3nbd
 
-[English](README.md) | Русский | [简体中文](README_CN.md)
+[English](README.md) | Русский | [简体中文](README_CN.md) | [Español](README_ES.md) | [Français](README_FR.md)
 
 NBD-сервер на Go, который хранит блочные устройства в S3-совместимом хранилище. Поддерживает несколько именованных устройств, по одному активному клиенту на каждое. NBD работает по TCP только через loopback, без TLS; для S3 используются HTTP или HTTPS, адресация path-style и Signature V4.
 
