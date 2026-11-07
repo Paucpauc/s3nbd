@@ -157,3 +157,115 @@ func TestNBDConcurrentReadBarrier(t *testing.T) {
 		t.Fatal("FUA not persisted")
 	}
 }
+
+// Exercise both negotiation paths against the same live export, including
+// cache coherence, cross-connection FLUSH, and disconnecting only one socket.
+func TestNBDMultiConnection(t *testing.T) {
+	s := &memoryStore{data: map[uint64][]byte{}}
+	d := &Device{store: s, size: 1024, blockSize: 512, capacity: 2, workers: 2, blocks: map[uint64]*block{}}
+	connect := func(opt uint32) net.Conn {
+		t.Helper()
+		a, c := net.Pipe()
+		done := make(chan struct{})
+		go func() { serve(a, map[string]*Device{"disk": d}); close(done) }()
+		t.Cleanup(func() { c.Close(); <-done })
+		c.SetDeadline(time.Now().Add(5 * time.Second))
+		if _, err := io.ReadFull(c, make([]byte, 18)); err != nil {
+			t.Fatal(err)
+		}
+		p := []byte("disk")
+		if opt != 1 {
+			p = make([]byte, 10)
+			be.PutUint32(p, 4)
+			copy(p[4:], "disk")
+		}
+		if err := send(c, uint32(3), optMagic, opt, uint32(len(p)), p); err != nil {
+			t.Fatal(err)
+		}
+		var exportFlags uint16
+		if opt == 1 {
+			h := make([]byte, 10)
+			if _, err := io.ReadFull(c, h); err != nil {
+				t.Fatal(err)
+			}
+			exportFlags = be.Uint16(h[8:])
+		} else {
+			for _, kind := range []uint32{3, 1} {
+				var h struct {
+					Magic             uint64
+					Opt, Kind, Length uint32
+				}
+				if err := binary.Read(c, be, &h); err != nil {
+					t.Fatal(err)
+				}
+				if h.Magic != 0x3e889045565a9 || h.Opt != opt || h.Kind != kind {
+					t.Fatalf("option reply: %+v", h)
+				}
+				q := make([]byte, h.Length)
+				if _, err := io.ReadFull(c, q); err != nil {
+					t.Fatal(err)
+				}
+				if kind == 3 {
+					if len(q) != 12 {
+						t.Fatal("export info length")
+					}
+					exportFlags = be.Uint16(q[10:])
+				}
+			}
+		}
+		if exportFlags&256 == 0 {
+			t.Fatal("CAN_MULTI_CONN missing")
+		}
+		return c
+	}
+	a := connect(7)
+	b := connect(1)
+	request := func(c net.Conn, cmd, flags uint16, p []byte) []byte {
+		t.Helper()
+		var payload []byte
+		if cmd == 1 {
+			payload = p
+		}
+		if err := send(c, uint32(0x25609513), flags, cmd, uint64(17), uint64(0), uint32(len(p)), payload); err != nil {
+			t.Fatal(err)
+		}
+		var r struct {
+			Magic, Error uint32
+			Handle       uint64
+		}
+		if err := binary.Read(c, be, &r); err != nil {
+			t.Fatal(err)
+		}
+		if r.Magic != 0x67446698 || r.Error != 0 || r.Handle != 17 {
+			t.Fatalf("reply: %+v", r)
+		}
+		if cmd == 0 {
+			out := make([]byte, len(p))
+			if _, err := io.ReadFull(c, out); err != nil {
+				t.Fatal(err)
+			}
+			return out
+		}
+		return nil
+	}
+	request(a, 1, 0, []byte("abc"))
+	if got := request(b, 0, 0, make([]byte, 3)); string(got) != "abc" {
+		t.Fatalf("shared cache: %q", got)
+	}
+	request(b, 3, 0, nil)
+	s.mu.Lock()
+	persisted := string(s.data[0][:3])
+	s.mu.Unlock()
+	if persisted != "abc" {
+		t.Fatal("cross-connection flush")
+	}
+	request(b, 1, 1, []byte("xyz"))
+	if got := request(a, 0, 0, make([]byte, 3)); string(got) != "xyz" {
+		t.Fatalf("FUA visibility: %q", got)
+	}
+	a.Close()
+	request(b, 4, 0, make([]byte, 3))
+	if got := request(b, 0, 0, make([]byte, 3)); string(got) != "\x00\x00\x00" {
+		t.Fatalf("trim: %q", got)
+	}
+}

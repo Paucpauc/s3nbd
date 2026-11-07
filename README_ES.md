@@ -2,7 +2,7 @@
 
 [English](README.md) | [Русский](README_RU.md) | [简体中文](README_CN.md) | Español | [Français](README_FR.md)
 
-Servidor NBD escrito en Go que almacena dispositivos de bloques en un almacenamiento compatible con S3. Admite varios dispositivos con nombre, con un cliente activo por dispositivo. NBD utiliza TCP o un socket Unix sin TLS; S3 utiliza HTTP o HTTPS, direccionamiento path-style y Signature V4.
+Servidor NBD escrito en Go que almacena dispositivos de bloques en un almacenamiento compatible con S3. Admite varios dispositivos con nombre, con múltiples conexiones por dispositivo. NBD utiliza TCP o un socket Unix sin TLS; S3 utiliza HTTP o HTTPS, direccionamiento path-style y Signature V4.
 
 ## Inicio rápido
 
@@ -74,7 +74,7 @@ Ten en cuenta estas restricciones:
 - No cambies los tamaños de los dispositivos ni `BlockSize` para datos existentes; solo se guardan en la configuración.
 - Utiliza un único servidor por bucket/prefijo y no modifiques sus objetos externamente.
 - El almacenamiento debe ofrecer consistencia de lectura tras escritura y durabilidad de las escrituras confirmadas. Un volcado que abarca varios objetos no es atómico.
-- NBD utiliza negociación fixed-newstyle con exportaciones con nombre, READ/WRITE, FLUSH, FUA y TRIM. Las solicitudes READ/WRITE están limitadas a 32 MiB; no se anuncia compatibilidad con múltiples conexiones.
+- NBD utiliza negociación fixed-newstyle con exportaciones con nombre, READ/WRITE, FLUSH, FUA y TRIM. Las solicitudes READ/WRITE están limitadas a 32 MiB; se anuncia compatibilidad con múltiples conexiones (`NBD_FLAG_CAN_MULTI_CONN`).
 
 ## Descarte
 

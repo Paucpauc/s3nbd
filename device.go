@@ -114,7 +114,6 @@ type Device struct {
 	size                         uint64
 	blockSize, capacity, workers int
 	blocks                       map[uint64]*block
-	busy                         bool
 }
 
 func (d *Device) valid(off uint64, n int) bool { return off <= d.size && uint64(n) <= d.size-off }

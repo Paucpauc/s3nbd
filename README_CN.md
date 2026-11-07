@@ -2,7 +2,7 @@
 
 [English](README.md) | [Русский](README_RU.md) | 简体中文 | [Español](README_ES.md) | [Français](README_FR.md)
 
-用 Go 编写的 NBD 服务器，将块设备数据存储在兼容 S3 的存储中。支持多个命名设备，每个设备允许一个活跃客户端。NBD 通过 TCP 或 Unix 套接字提供服务，不使用 TLS；S3 使用 HTTP 或 HTTPS、path-style 寻址和 Signature V4 签名。
+用 Go 编写的 NBD 服务器，将块设备数据存储在兼容 S3 的存储中。支持多个命名设备，每个设备支持多个连接。NBD 通过 TCP 或 Unix 套接字提供服务，不使用 TLS；S3 使用 HTTP 或 HTTPS、path-style 寻址和 Signature V4 签名。
 
 ## 快速开始
 
@@ -74,7 +74,7 @@ sudo nbd-client -unix /run/s3nbd/nbd.sock /dev/nbd0 -N disk1
 - 对于已有数据，不要更改设备大小或 `BlockSize`；这些值仅保存在配置文件中。
 - 每个存储桶/前缀组合只能由一个服务器使用，不要从外部修改其对象。
 - 存储服务必须保证写后读一致性，以及已确认写入的数据持久性。跨多个对象的刷写不是原子操作。
-- NBD 使用 fixed-newstyle 协商，支持命名导出、READ/WRITE、FLUSH、FUA 和 TRIM。READ/WRITE 请求大小上限为 32 MiB；服务器不声明支持多连接。
+- NBD 使用 fixed-newstyle 协商，支持命名导出、READ/WRITE、FLUSH、FUA 和 TRIM。READ/WRITE 请求大小上限为 32 MiB；服务器声明支持多连接（`NBD_FLAG_CAN_MULTI_CONN`）。
 
 ## 丢弃未使用的块
 

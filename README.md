@@ -2,7 +2,7 @@
 
 English | [Русский](README_RU.md) | [简体中文](README_CN.md) | [Español](README_ES.md) | [Français](README_FR.md)
 
-A Go NBD server that stores block devices in S3-compatible storage. Supports multiple named devices, with one active client per device. NBD runs over TCP or a Unix socket without TLS; S3 uses HTTP or HTTPS, path-style addressing, and Signature V4.
+A Go NBD server that stores block devices in S3-compatible storage. Supports multiple named devices, with multiple connections per device. NBD runs over TCP or a Unix socket without TLS; S3 uses HTTP or HTTPS, path-style addressing, and Signature V4.
 
 ## Quick start
 
@@ -96,7 +96,7 @@ Keep these constraints in mind:
 - Do not change device sizes or `BlockSize` for existing data; they are stored only in the config.
 - Use one server per bucket/prefix, and do not modify its objects externally.
 - Storage must provide read-after-write consistency and durable acknowledged writes. A flush across several objects is not atomic.
-- NBD uses fixed-newstyle negotiation with named exports, READ/WRITE, FLUSH, FUA, and TRIM. READ/WRITE requests are limited to 32 MiB; multi-connection support is not advertised.
+- NBD uses fixed-newstyle negotiation with named exports, READ/WRITE, FLUSH, FUA, and TRIM. READ/WRITE requests are limited to 32 MiB; multi-connection support is advertised (`NBD_FLAG_CAN_MULTI_CONN`), with a shared cache and FLUSH/FUA barriers.
 
 ## Discard
 
@@ -124,3 +124,5 @@ Run the tests with:
 ```sh
 go test -race ./...
 ```
+
+Use `nbd-client 127.0.0.1 10809 /dev/nbd0 -N disk1 -b 4096 -persist -timeout 60 -C 2` for two connections to one device. Parallel reads share the device-wide `Workers` limit; more connections do not increase S3 concurrency beyond it. Use one filesystem mount per export unless the filesystem supports shared block devices.

@@ -14,6 +14,10 @@ var be = binary.BigEndian
 
 const optMagic uint64 = 0x49484156454f5054
 
+// HAS_FLAGS | SEND_FLUSH | SEND_FUA | SEND_TRIM | CAN_MULTI_CONN.
+// All connections share the Device cache and its mutation/flush barrier.
+const transmissionFlags uint16 = 1 | 4 | 8 | 32 | 256
+
 func send(w io.Writer, v ...any) error {
 	for _, x := range v {
 		if p, ok := x.([]byte); ok && len(p) == 0 {
@@ -89,32 +93,16 @@ func serve(c net.Conn, devices map[string]*Device) {
 				reply(c, h.Opt, 0x80000006, nil)
 				continue
 			}
-			target.mu.Lock()
-			busy := target.busy
-			if !busy && h.Opt != 6 {
-				target.busy = true
-			}
-			target.mu.Unlock()
-			if busy {
-				if h.Opt == 1 {
-					return
-				}
-				reply(c, h.Opt, 0x80000001, nil)
-				continue
-			}
 			if h.Opt != 6 {
 				d = target
 				defer func() {
 					if err := d.Flush(context.Background()); err != nil {
 						slog.Error("disconnect flush failed", "device", name, "error", err)
 					}
-					d.mu.Lock()
-					d.busy = false
-					d.mu.Unlock()
 				}()
 			}
 			if h.Opt == 1 {
-				if send(c, target.size, uint16(45)) != nil {
+				if send(c, target.size, transmissionFlags) != nil {
 					return
 				}
 				if flags&2 == 0 {
@@ -125,7 +113,7 @@ func serve(c net.Conn, devices map[string]*Device) {
 			} else {
 				q := make([]byte, 12)
 				be.PutUint64(q[2:], target.size)
-				be.PutUint16(q[10:], 45)
+				be.PutUint16(q[10:], transmissionFlags)
 				if reply(c, h.Opt, 3, q) != nil {
 					return
 				}

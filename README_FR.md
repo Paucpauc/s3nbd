@@ -2,7 +2,7 @@
 
 [English](README.md) | [Русский](README_RU.md) | [简体中文](README_CN.md) | [Español](README_ES.md) | Français
 
-Serveur NBD écrit en Go qui stocke des périphériques blocs dans un stockage compatible S3. Il prend en charge plusieurs périphériques nommés, avec un seul client actif par périphérique. NBD utilise TCP ou un socket Unix sans TLS ; S3 utilise HTTP ou HTTPS, l’adressage path-style et Signature V4.
+Serveur NBD écrit en Go qui stocke des périphériques blocs dans un stockage compatible S3. Il prend en charge plusieurs périphériques nommés, avec plusieurs connexions par périphérique. NBD utilise TCP ou un socket Unix sans TLS ; S3 utilise HTTP ou HTTPS, l’adressage path-style et Signature V4.
 
 ## Démarrage rapide
 
@@ -74,7 +74,7 @@ Tenez compte des contraintes suivantes :
 - Ne modifiez pas les tailles des périphériques ni `BlockSize` pour des données existantes ; ces valeurs sont stockées uniquement dans la configuration.
 - Utilisez un seul serveur par bucket/préfixe et ne modifiez pas ses objets depuis l’extérieur.
 - Le stockage doit garantir la cohérence des lectures après écriture et la durabilité des écritures acquittées. Un vidage portant sur plusieurs objets n’est pas atomique.
-- NBD utilise la négociation fixed-newstyle avec des exports nommés, READ/WRITE, FLUSH, FUA et TRIM. Les requêtes READ/WRITE sont limitées à 32 MiB ; la prise en charge de connexions multiples n’est pas annoncée.
+- NBD utilise la négociation fixed-newstyle avec des exports nommés, READ/WRITE, FLUSH, FUA et TRIM. Les requêtes READ/WRITE sont limitées à 32 MiB ; la prise en charge de connexions multiples est annoncée (`NBD_FLAG_CAN_MULTI_CONN`).
 
 ## Libération des blocs (discard)
 
