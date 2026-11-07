@@ -15,6 +15,19 @@ Packages install `/usr/bin/s3nbd` and an example configuration in
 `/usr/share/doc/s3nbd/config.example.json`. Copy and edit the example, then run
 `s3nbd -config /path/to/config.json` with the credentials described below.
 
+To publish a GitHub Release, commit and push the workflow, then create and push
+a version tag on the commit you want to release:
+
+```sh
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+After tests and both architecture builds succeed, the workflow publishes the
+release with generated release notes, both Linux binaries, DEB/RPM packages,
+and a combined `SHA256SUMS` file. Release tags must have the form `vX.Y.Z`.
+Authentication uses the built-in `GITHUB_TOKEN`; no additional secret is needed.
+
 You need Go 1.26+, an existing S3 bucket, and `nbd-client` on Linux.
 
 ```sh
