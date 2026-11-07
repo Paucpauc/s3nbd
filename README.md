@@ -6,6 +6,15 @@ A Go NBD server that stores block devices in S3-compatible storage. Supports mul
 
 ## Quick start
 
+GitHub Actions builds Linux binaries, DEB and RPM packages for amd64 and arm64
+on every push and pull request, and supports manual runs. Download the
+`s3nbd-linux-amd64` or `s3nbd-linux-arm64` artifact from the workflow run;
+each contains the binary, both packages, and `SHA256SUMS`.
+Tags such as `v1.2.3` set the package version; other builds use a development version.
+Packages install `/usr/bin/s3nbd` and an example configuration in
+`/usr/share/doc/s3nbd/config.example.json`. Copy and edit the example, then run
+`s3nbd -config /path/to/config.json` with the credentials described below.
+
 You need Go 1.26+, an existing S3 bucket, and `nbd-client` on Linux.
 
 ```sh

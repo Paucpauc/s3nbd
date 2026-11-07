@@ -1,0 +1,65 @@
+name: Build binaries and packages
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - run: go test -race ./...
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [amd64, arm64]
+    env:
+      GOOS: linux
+      GOARCH: ${{ matrix.arch }}
+      CGO_ENABLED: '0'
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - name: Determine package version
+        shell: bash
+        run: |
+          if [[ "$GITHUB_REF_TYPE" == tag && "$GITHUB_REF_NAME" =~ ^v?([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
+            version="${BASH_REMATCH[1]}"
+          else
+            version="0.0.0-dev.${GITHUB_RUN_NUMBER}.${GITHUB_RUN_ATTEMPT}.${GITHUB_SHA:0:12}"
+          fi
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+      - name: Build binary
+        run: |
+          mkdir -p dist build
+          go build -trimpath -ldflags='-s -w' -o build/s3nbd .
+          cp build/s3nbd "dist/s3nbd-linux-${GOARCH}"
+      - name: Install package builder
+        # Build nFPM for the runner, independently of the target architecture.
+        run: GOOS=linux GOARCH=amd64 go install github.com/goreleaser/nfpm/v2/cmd/nfpm@v2.43.0
+      - name: Build DEB and RPM
+        run: |
+          nfpm package --config packaging/nfpm.yaml --packager deb --target dist/
+          nfpm package --config packaging/nfpm.yaml --packager rpm --target dist/
+      - name: Calculate checksums
+        working-directory: dist
+        run: sha256sum * > SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: s3nbd-linux-${{ matrix.arch }}
+          path: dist/
+          if-no-files-found: error

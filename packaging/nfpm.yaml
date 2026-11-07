@@ -1,0 +1,18 @@
+name: s3nbd
+arch: ${GOARCH}
+platform: linux
+version: ${VERSION}
+maintainer: Paucpauc <Paucpauc@users.noreply.github.com>
+homepage: https://github.com/Paucpauc/s3nbd
+description: NBD server backed by S3-compatible object storage.
+depends:
+  - ca-certificates
+contents:
+  - src: build/s3nbd
+    dst: /usr/bin/s3nbd
+    file_info:
+      mode: 0755
+  - src: config.example.json
+    dst: /usr/share/doc/s3nbd/config.example.json
+  - src: README.md
+    dst: /usr/share/doc/s3nbd/README.md
